@@ -1,0 +1,5 @@
+wallet = int(input('How much money do you have? '))
+record = input('Add an expense or income record with description and amount: \n')
+item, money = record.split()
+wallet += int(money)
+print(f'Now you have {wallet} dollars.')
