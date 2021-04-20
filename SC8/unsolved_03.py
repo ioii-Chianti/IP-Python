@@ -1,2 +1,2 @@
-def Operation(*nums, *stack, op):
-    
+def Operation(*nums, op, *stack):
+    print("test")

@@ -13,9 +13,11 @@ def withNewestTax(price, rate=price):
 print(withNewTax(10))
 print(withNewTax(10))
 print(withNewTax(10))
+
 print(withNewerTax(10))
 print(withNewerTax(10))
 print(withNewerTax(10))
+
 print(withNewestTax(10))
 print(withNewestTax(10))
 print(withNewestTax(10))
