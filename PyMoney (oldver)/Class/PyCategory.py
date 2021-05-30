@@ -10,7 +10,6 @@ class Categories:
             __init__(self),
             catalog(self),
             View(self, data, level=-1),
-            Locate(self, recData, toFind),
             Subcategories(self, toFind),
             isValidCategory(self, Cate, toCheck),
             __Flatten(self, data)
@@ -40,26 +39,6 @@ class Categories:
         else:
             for element in recData:
                 self.View(element, level + 1)
-
-    def Locate(self, recData, toFind):
-        ''' Find the index of specific categories and put into tuple form.
-        
-            Parameters:
-                recData : list
-                    The list structure of all category to traverse recursively.
-                toFind : str
-                    The target category to find.
-            Returns:
-                if the specific category exists, then return its index in tuple, else return False.
-        '''
-        if type(recData) == list:   # whether to look inside members of recData
-            for i, value in enumerate(recData):
-                path = self.Locate(value, toFind)   # find each members
-                if path == True:             # recData[i] == toFind
-                    return (i, )
-                if path != False:            # ?
-                    return (i, ) + path      # 遞迴回到上層時把前面路徑補上
-        return recData == toFind
 
     def Subcategories(self, toFind):
         ''' Find a non-nested list containing the specified category and all the subcategories under it (if any). '''
