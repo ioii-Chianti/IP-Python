@@ -1,8 +1,8 @@
 def reverse_list(element):
     if type(element) == list:
         newList = []
-        for i in range(len(element)):
-            newList.insert(0, reverse_list(element[i]))
+        for data in element:
+            newList.insert(0, reverse_list(data))
         return newList
     else:
         return element
