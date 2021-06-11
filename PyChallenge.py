@@ -17,7 +17,7 @@ class Grid:
             r, c = randint(0, 3), randint(0, 3)
             if not self.board[r][c]:
                 # if mode is 0 then just init 2
-                self.board[r][c] = sample([2, 4], counts=[8, 1], k=1)[0] if mode else 2
+                self.board[r][c] = sample([2, 4], k=1, counts=[8, 1])[0] if mode else 2
                 break            # sample returns a list
     
     def rotate(self):
