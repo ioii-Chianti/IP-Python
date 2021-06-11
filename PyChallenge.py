@@ -1,137 +1,126 @@
+import sys
 from random import *
 
 class Grid:
     def __init__(self):
+        ''' Constructor: init board and new 2 '''
         self.board = [ [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0] ]
-        self.newScore = 0
-        self.update = False
-        self.randomNew()
-        self.randomNew()
+        self.shifted = [False, 0]    # [0] shifted ot not [1] score in this round
+        self.Max = 2
+        self.randNew(0)
+        self.randNew(0)
 
-    def randomNew(self):
-        def isValid(r, c):
-            if self.board[r][c]:
-                return False
-            return True
-
+    def randNew(self, mode=1):
+        ''' Find valid position to new a num from (2, 4, 8) randomly
+            Parameter: [int] mode: decide whether it's init or not '''
         while True:
             r, c = randint(0, 3), randint(0, 3)
-            if isValid(r, c):
-                self.board[r][c] = 2
-                break
+            if not self.board[r][c]:
+                # if mode is 0 then just init 2
+                self.board[r][c] = sample([2, 4], counts=[8, 1], k=1)[0] if mode else 2
+                break            # sample returns a list
     
     def rotate(self):
+        ''' Counterclockwise rotation'''
         self.board = list(map(list, zip(*self.board)))[::-1]
 
     def collapse(self):
-        Fix, self.newScore, self.update = [-1, -1, -1, -1], 0, False
+        ''' Merge numbers based on the rule
+            Return: [bool] updated or not '''
+        # Fix: the index of block which is already merged and can't be merged again in this round
+        Fix, self.shifted = [-1, -1, -1, -1], [False, 0]
+
         def merge(r, c):
-            if self.board[r][c]:
+            if self.board[r][c]:    # not sero
+                # previous block is zero
                 if self.board[r][c-1] == 0:
-                    self.board[r][c-1] = self.board[r][c]
+                    # move to previous block
+                    self.board[r][c-1], self.board[r][c] = self.board[r][c], 0
                     if c > 1:
-                        merge(r, c - 1)
-                    self.board[r][c] = 0
-                    self.update = True
+                        merge(r, c - 1)     # check pervious blocks recursively 
+                    self.shifted[0] = True
+                # previous block is the same as current, and meet the rules
                 elif self.board[r][c-1] == self.board[r][c] and Fix[r] < c - 1:
-                    self.board[r][c-1] += self.board[r][c]
-                    self.newScore += self.board[r][c-1]
-                    self.board[r][c] = 0
-                    Fix[r] = c - 1
-                    self.update = True
+                    # sum up with previous block
+                    self.board[r][c-1], self.board[r][c] = self.board[r][c-1] + self.board[r][c], 0
+                    # set flag and update score
+                    self.shifted = [True, self.shifted[1] + self.board[r][c-1]]
+                    self.Max = max(self.Max, self.board[r][c-1])
+                    Fix[r] = c - 1   # important !!!
 
         for row in range(4):
             for col in range(1, 4):
                 merge(row, col)
-        return self.update
+        return self.shifted[0]   # return updated or not
         
 
 class Game:
     def __init__(self, target):
-        self.Score = 0
-        self.Move = 0
+        ''' Constructor: init target value and new Grid object '''
         self.Target = target
         self.GridObj = Grid()
-        self.Result = ''
 
     def Swipe(self, direction):
-        times = {'W': 1, 'S': 3, 'A': 0, 'D': 2}
+        ''' Process of a swiping:
+            1. Rotate matrix and change to left swiping
+            2. Collapse and see whether the board changed or not
+            3. Rotate back to right direction  '''
+
+        # times needed for roatation
+        times = {'up': 1, 'down': 3, 'left': 0, 'right': 2, 'W': 1, 'S': 3, 'A': 0, 'D': 2}
         time = times[direction]
+
+        # 1
         while time:
             self.GridObj.rotate()
             time -= 1
-        needUpdate = self.GridObj.collapse()
-
+        # 2
+        updated = self.GridObj.collapse()
+        # 3
         time = 4 - times[direction]
         while time:
             self.GridObj.rotate()
             time -= 1
-
-        if needUpdate:
-            self.GridObj.randomNew()
-            self.Move += 1
-            self.Score += self.GridObj.newScore
-        print('shifted, ', end='') if needUpdate else print('not shifted, ', end='')
-        print(f'{self.GridObj.newScore} points')
+            
+        if updated:
+            self.GridObj.randNew()
+            print(f'shifted, {self.GridObj.shifted[1]} points')
+        else:
+            print(f'not shifted, 0 points')
     
     def View(self):
-        # 改成呼叫這個物件就 return 容器
+        ''' Print out the board '''
         for row in self.GridObj.board:
             for val in row:
-                print(f'{val}', end = ' ')
-            print()
+                print(f'{val:>3d}', end = ' ')
+            print('\n')
     
     def Finished(self):
-        if self.GridObj.newScore >= self.Target:
-            self.Result = 'You Win!'
-            return True
+        ''' Check if finished 
+            Returns [str/bool] return False if not finished, or the result of game '''
+        if self.GridObj.Max >= self.Target:
+            return 'You Win!'
 
-        GoOn = False
+        cont, mx = False, self.GridObj.board
         for row in range(4):
             for col in range(4):
-                val = self.GridObj.board[row][col]
+                val = mx[row][col]
                 # still have 0 on the board
                 if not val:
                     return False
-
-                # Check all neighbors
-                if (row, col) == (0, 0):
-                    GoOn = val == self.GridObj.board[row + 1][col] or \
-                           val == self.GridObj.board[row][col + 1]
-                elif (row, col) == (0, 3):
-                    GoOn = val == self.GridObj.board[row + 1][col] or \
-                           val == self.GridObj.board[row][col - 1]
-                elif (row, col) == (3, 0):
-                    GoOn = val == self.GridObj.board[row - 1][col] or \
-                           val == self.GridObj.board[row][col + 1]
-                elif (row, col) == (3, 3):
-                    GoOn = val == self.GridObj.board[row - 1][col] or \
-                           val == self.GridObj.board[row][col - 1]
-                elif row == 0:
-                    GoOn = val == self.GridObj.board[row + 1][col] or \
-                           val == self.GridObj.board[row][col - 1] or \
-                           val == self.GridObj.board[row][col + 1]
-                elif col == 0:
-                    GoOn = val == self.GridObj.board[row - 1][col] or \
-                           val == self.GridObj.board[row + 1][col] or \
-                           val == self.GridObj.board[row][col + 1]
+                # Check neighbors
+                if (row, col) == (3, 3):
+                    pass
                 elif row == 3:
-                    GoOn = val == self.GridObj.board[row - 1][col] or \
-                           val == self.GridObj.board[row][col - 1] or \
-                           val == self.GridObj.board[row][col + 1]
+                    cont = val == mx[row][col + 1]
                 elif col == 3:
-                    GoOn = val == self.GridObj.board[row - 1][col] or \
-                           val == self.GridObj.board[row + 1][col] or \
-                           val == self.GridObj.board[row][col - 1]
+                    cont = val == mx[row + 1][col]
                 else:
-                    GoOn = val == self.GridObj.board[row - 1][col] or \
-                           val == self.GridObj.board[row + 1][col] or \
-                           val == self.GridObj.board[row][col - 1] or \
-                           val == self.GridObj.board[row][col + 1]
-        if (GoOn):
-            return False
-        self.Result = 'You Lose!'
-        return True
+                    cont = (val == mx[row][col + 1] or val == mx[row + 1][col])
+                # whether to continue playing
+                if cont:
+                    return False
+        return 'You Lose!'
 
 target = int(input("Enter your target value: "))
 Game2048 = Game(target)
@@ -139,8 +128,15 @@ Game2048 = Game(target)
 while True:
     print()
     Game2048.View()
-    action = input('Up, Down, Left, Right: ')
-    Game2048.Swipe(action)
-    if Game2048.Finished():
-        print(Game2048.Result)
-        break
+    actions = {'up', 'down', 'left', 'right', 'W', 'A', 'S', 'D'}
+    print("Enter up, down, left, right or W, A, S, D")
+    try:
+        action = input('Command: ')
+        assert action in actions, f'# Invalid Command #\n'
+    except AssertionError as errmsg:
+        sys.stderr.write(str(errmsg))
+    else:
+        Game2048.Swipe(action)
+        if Game2048.Finished():
+            print(Game2048.Finished())
+            break
