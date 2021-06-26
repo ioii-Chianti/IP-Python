@@ -19,6 +19,6 @@ L2.sort(key=lambda x: MD[x])
 
 # 8.
 prt1 = list(map(max, [1, 7, 2, 8], [5, 6, 3, 0]))
-prt2 = [ max(*x) for x in zip([1, 7, 2, 8], [5, 6, 3, 0])] 
+prt2 = [ max(x) for x in zip([1, 7, 2, 8], [5, 6, 3, 0])] 
 print(prt1)
 print(prt2)
